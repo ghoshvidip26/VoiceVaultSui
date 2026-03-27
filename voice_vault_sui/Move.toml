@@ -1,0 +1,6 @@
+[package]
+name = "voice_vault_sui"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]

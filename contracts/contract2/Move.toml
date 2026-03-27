@@ -1,0 +1,11 @@
+[package]
+name = "VoiceVault"
+version = "1.0.0"
+
+[addresses]
+VoiceVault = "0xf32dc47c185d9bc65638b57eb50eb0c9c47832f898e373a6e1636535c6f1772c"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "testnet"
+subdir = "aptos-move/framework/aptos-framework"
