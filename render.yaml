@@ -1,0 +1,89 @@
+services:
+  - type: web
+    name: voicevault-backend
+    env: docker
+    plan: starter
+    
+    # Docker configuration
+    dockerfilePath: ./Dockerfile
+    docker:
+      workDir: /app
+      command: python server.py
+    
+    # Environment variables
+    envVars:
+      # Server
+      - key: PORT
+        value: 8080
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      
+      # Sui Configuration
+      - key: SUI_ADDRESS
+        scope: shared
+      - key: SUI_ALIAS
+        scope: shared
+      - key: SUI_NETWORK
+        value: testnet
+      - key: SUI_RPC_URL
+        value: https://fullnode.testnet.sui.io
+      - key: SUI_FULL_NODE_URL
+        value: https://fullnode.testnet.sui.io:443
+      - key: SUI_GAS_BUDGET
+        value: "10000000"
+      - key: SUI_PACKAGE_ID
+        scope: shared
+      - key: SUI_UPGRADE_CAPABILITY
+        scope: shared
+      - key: SUI_VOICE_REGISTRY_ID
+        scope: shared
+      
+      # Walrus Configuration
+      - key: WALRUS_STORAGE_MODE
+        value: remote  # Use 'remote' in production
+      - key: WALRUS_PUBLISHER_URL
+        value: https://publisher.walrus-testnet.walrus.space
+      - key: WALRUS_AGGREGATOR_URL
+        scope: shared
+      - key: WALRUS_EPOCHS
+        value: "5"
+      - key: WALRUS_DELETABLE
+        value: "true"
+      - key: WALRUS_MAX_BLOB_SIZE
+        value: "10485760"
+      
+      # API Configuration
+      - key: API_SECRET_KEY
+        scope: shared
+      - key: CORS_ORIGINS
+        value: '["https://voicevault.vercel.app", "https://voicevault-frontend.onrender.com"]'
+      - key: LOG_LEVEL
+        value: info
+    
+    # Build configuration
+    buildCommand: pip install --no-cache-dir -r backend/requirements.txt
+    # startCommand defined in Dockerfile CMD
+    
+    # Health check endpoint
+    healthCheckPath: /docs
+    healthCheckInterval: 30
+    healthCheckTimeout: 10
+    
+    # Auto-deploy from Git
+    autoDeploy: true
+    
+    # Build settings
+    buildFilter:
+      paths:
+        - backend/**
+        - Dockerfile
+        - .dockerignore
+        - .env.example
+    
+    # Scaling
+    numInstances: 1
+    # maxNumInstances: 3  # Enable for auto-scaling
+    
+    # Timeouts
+    buildTimeoutMinutes: 30
+    startTimeoutSeconds: 300
