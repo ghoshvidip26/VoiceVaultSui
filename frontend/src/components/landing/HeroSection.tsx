@@ -36,7 +36,7 @@ export function HeroSection() {
               className="h-5 w-5 rounded-full object-cover"
             />
             <span className="text-sm font-medium text-blue-500">
-              Powered by Sui and Shelby
+              Powered by Sui and Walrus
             </span>
           </div>
 

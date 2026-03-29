@@ -14,7 +14,7 @@ module voice_vault_sui::voice_identity {
         owner: address,
         voice_id: u64,
         name: String,
-        model_uri: String,
+        model_uri: String, // Stores the Walrus manifest URI (walrus://<manifest_blob_id>)
         rights: String,
         price_per_use: u64,
         created_at: u64

@@ -22,7 +22,7 @@ const Upload = () => {
   const [ttsLoading, setTtsLoading] = useState(false);
   const [ttsAudioUrl, setTtsAudioUrl] = useState<string | null>(null);
 
-  // ------------------- Voice Model Processing (Shelby) -------------------
+  // ------------------- Voice Model Processing (Walrus) -------------------
   const { address, isConnected } = useSuiWallet();
   const { metadata: ownVoiceMetadata } = useVoiceMetadata(address?.toString() || null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -55,11 +55,11 @@ const Upload = () => {
       try {
         const allVoices: Array<{ voiceId: string; name: string; modelUri: string; owner: string; isOwned?: boolean }> = [];
 
-        const checkShelbyUriExists = async (uri: string, requesterAccount?: string): Promise<boolean> => {
-          if (!uri.startsWith("shelby://")) return true;
+        const checkModelUriExists = async (uri: string, requesterAccount?: string): Promise<boolean> => {
+          if (!uri.startsWith("walrus://") && !uri.startsWith("walrus://")) return true;
           try {
             const { backendApi } = await import("@/lib/api");
-            await backendApi.downloadFromShelby(uri, "meta.json", requesterAccount);
+            await backendApi.downloadModelFile(uri, "meta.json", requesterAccount);
             return true;
           } catch {
             return false;
@@ -67,7 +67,7 @@ const Upload = () => {
         };
 
         if (ownVoiceMetadata && address) {
-          const exists = await checkShelbyUriExists(ownVoiceMetadata.modelUri, address.toString());
+          const exists = await checkModelUriExists(ownVoiceMetadata.modelUri, address.toString());
           if (exists) {
             allVoices.push({
               voiceId: ownVoiceMetadata.voiceId,
@@ -81,7 +81,7 @@ const Upload = () => {
 
         const purchased = getPurchasedVoices();
         for (const v of purchased) {
-          const exists = await checkShelbyUriExists(v.modelUri, address?.toString());
+          const exists = await checkModelUriExists(v.modelUri, address?.toString());
           if (exists) {
             allVoices.push({ voiceId: v.voiceId, name: v.name, modelUri: v.modelUri, owner: v.owner, isOwned: false });
           } else {
@@ -115,7 +115,7 @@ const Upload = () => {
     };
   }, [ownVoiceMetadata, address, selectedPurchasedVoice]);
 
-  // ------------------- Mic Record (Shelby) -------------------
+  // ------------------- Mic Record (Walrus) -------------------
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -153,7 +153,7 @@ const Upload = () => {
       const { chatterboxVoiceClone } = await import("@/lib/chatterbox");
       toast.info("Fetching voice model and generating speech via Chatterbox...");
 
-      const previewBuffer = await backendApi.downloadFromShelby(
+      const previewBuffer = await backendApi.downloadModelFile(
         selectedPurchasedVoice,
         "preview.wav",
         address.toString()
@@ -169,7 +169,7 @@ const Upload = () => {
     }
   };
 
-  // ------------------- File Upload Handler (Shelby) -------------------
+  // ------------------- File Upload Handler (Walrus) -------------------
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -243,7 +243,7 @@ const Upload = () => {
     }
   };
 
-  // ------------------- Process Audio and Upload to Shelby -------------------
+  // ------------------- Process Audio and Upload to Walrus -------------------
   const handleProcessVoice = async () => {
     if (!isConnected || !address) { toast.error("Please connect your wallet first"); return; }
     if (!selectedFile) { toast.error("Please record or upload an audio file first"); return; }
@@ -261,12 +261,14 @@ const Upload = () => {
         voiceDescription.trim() || undefined
       );
 
-      setAutoName(voiceName.trim());
-      setAutoModelUri(processResult.uri);
-      setProcessedVoiceUri(processResult.uri);
+      const modelUri = processResult.walrusUri || processResult.uri;
 
-      toast.success("Voice model processed and uploaded to Shelby successfully!", {
-        description: `URI: ${processResult.uri}`,
+      setAutoName(voiceName.trim());
+      setAutoModelUri(modelUri);
+      setProcessedVoiceUri(modelUri);
+
+      toast.success("Voice model processed and uploaded to Walrus successfully!", {
+        description: `URI: ${modelUri}`,
         duration: 5000,
       });
     } catch (err: any) {
@@ -456,12 +458,12 @@ const Upload = () => {
             </CardContent>
           </Card>
 
-          {/* ------------------- Voice Model Processing (Shelby) ------------------- */}
+          {/* ------------------- Voice Model Processing (Walrus) ------------------- */}
           <Card>
             <CardHeader>
               <CardTitle>Step 1: Process Your Voice Model</CardTitle>
               <CardDescription>
-                Upload audio → Generate voice embedding → Store on Shelby → Register on Sui blockchain
+                Upload audio → Generate voice embedding → Store on Walrus → Register on Sui blockchain
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -534,16 +536,16 @@ const Upload = () => {
                 {processingLoading ? (
                   <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Processing & Uploading...</>
                 ) : (
-                  <><Sparkles className="h-5 w-5 mr-2" />Process Voice & Upload to Shelby</>
+                  <><Sparkles className="h-5 w-5 mr-2" />Process Voice & Upload to Walrus</>
                 )}
               </Button>
 
               {processedVoiceUri && (
                 <div className="space-y-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
                   <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                    ✓ Voice model processed and uploaded to Shelby successfully!
+                    ✓ Voice model processed and uploaded to Walrus successfully!
                   </p>
-                  <p className="text-xs text-green-700 dark:text-green-300 break-all">Shelby URI: {processedVoiceUri}</p>
+                  <p className="text-xs text-green-700 dark:text-green-300 break-all">Walrus URI: {processedVoiceUri}</p>
                   <p className="text-xs text-muted-foreground mt-2">
                     The Model URI has been auto-filled in the registration form below.
                   </p>
@@ -557,7 +559,7 @@ const Upload = () => {
             <CardHeader>
               <CardTitle>Step 2: Register Your Voice Model on Sui Blockchain</CardTitle>
               <CardDescription>
-                After processing and uploading your voice model to Shelby, register it on Sui blockchain to make it available in the marketplace.
+                After processing and uploading your voice model to Walrus, register it on Sui blockchain to make it available in the marketplace.
                 <br />
                 {autoModelUri && (
                   <span className="text-sm text-primary mt-2 block">
@@ -566,7 +568,7 @@ const Upload = () => {
                 )}
                 {!autoModelUri && (
                   <span className="text-sm text-muted-foreground mt-2 block">
-                    Complete Step 1 above to process your voice model and get a Shelby URI.
+                    Complete Step 1 above to process your voice model and get a Walrus URI.
                   </span>
                 )}
               </CardDescription>

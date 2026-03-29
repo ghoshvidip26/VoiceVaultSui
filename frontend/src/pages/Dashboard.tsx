@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEffect, useState } from "react";
 import { useSuiWallet, getAccountBalance } from "@/hooks/useSuiWallet";
 import { useSuiClient } from "@mysten/dapp-kit";
-import { useVoicesWithShelbyMetadata } from "@/hooks/useVoicesWithShelbyMetadata";
+import { useVoicesWithWalrusMetadata } from "@/hooks/useVoicesWithWalrusMetadata";
 
 const recentActivity = [
   { type: "payout", voice: "All Voices", user: "You", amount: 0, time: "Just now" },
@@ -22,7 +22,7 @@ const Dashboard = () => {
   const connected = isConnected;
   const [suiBalance, setSuiBalance] = useState<number | null>(null);
 
-  const { voices, isLoading: isVoicesLoading } = useVoicesWithShelbyMetadata(walletAddress ? [walletAddress] : []);
+  const { voices, isLoading: isVoicesLoading } = useVoicesWithWalrusMetadata(walletAddress ? [walletAddress] : []);
 
   useEffect(() => {
     let cancelled = false;

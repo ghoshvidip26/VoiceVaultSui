@@ -22,7 +22,7 @@ Users can train custom AI voice models, mint on-chain ownership NFTs, and earn c
 ### Technical Features
 - **Blockchain Integration**: Smart contracts on Sui blockchain for immutable voice ownership
 - **Web3 Wallet**: Native Sui wallet integration for authentication and transactions
-- **AI Voice Models**: Integration with Shelby voice AI for model training and TTS
+- **AI Voice Models**: Integration with Walrus voice AI for model training and TTS
 - **Real-time Data**: Live usage tracking and earnings calculation
 - **Responsive UI**: Mobile-first design with dark theme and glassmorphic components
 - **Payment Processing**: Automated SUI token handling for voice licensing
@@ -43,7 +43,7 @@ Users can train custom AI voice models, mint on-chain ownership NFTs, and earn c
 ### Backend
 - **Language**: Python 3.8+
 - **API Framework**: FastAPI
-- **Voice AI**: Shelby API integration
+- **Voice AI**: Walrus API integration
 - **Database**: PostgreSQL (optional)
 - **Task Queue**: Celery (optional for async tasks)
 
@@ -148,7 +148,7 @@ voice-vault-sui/
 │
 ├── backend/                    # Python FastAPI backend
 │   ├── server.py              # Main application entry
-│   ├── shelby.py              # Shelby AI integration
+│   ├── walrus.py              # Walrus AI integration
 │   ├── voice_model.py         # Voice model logic
 │   ├── deploy/                # Deployment service
 │   │   ├── main.py            # FastAPI app
@@ -194,7 +194,7 @@ The application will be available at `http://localhost:5173`
 1. Connect your Sui wallet
 2. Navigate to "Create Voice"
 3. Upload your voice sample
-4. Train the AI model using Shelby
+4. Train the AI model using Walrus
 5. Register the voice on-chain
 6. View your voice in the Dashboard
 
@@ -231,9 +231,9 @@ Create a `.env` file in the backend directory:
 # Database
 DATABASE_URL=postgresql://user:password@localhost/voicevault
 
-# Shelby API
-SHELBY_API_KEY=your_shelby_api_key
-SHELBY_API_URL=https://api.shelby.ai
+# Walrus API
+WALRUS_API_KEY=your_walrus_api_key
+WALRUS_API_URL=https://api.walrus.ai
 
 # Sui Configuration
 SUI_NETWORK=testnet  # or mainnet
@@ -327,7 +327,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🔗 Links
 
 - **Sui Documentation**: https://docs.sui.io
-- **Shelby AI**: https://shelby.ai
+- **Walrus**: https://walrus.ai
 - **dApp Kit**: https://github.com/MystenLabs/sui
 
 ## 💬 Support
@@ -337,7 +337,7 @@ For support, email support@voicevault.io or open an issue in the repository.
 ## 🙏 Acknowledgments
 
 - Built with Sui blockchain
-- Voice AI powered by Shelby
+- Voice AI powered by Walrus
 - UI components from Shadcn/ui
 - Thanks to all contributors and testers
 

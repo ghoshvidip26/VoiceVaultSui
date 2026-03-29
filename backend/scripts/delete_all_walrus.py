@@ -1,12 +1,12 @@
 """
-Script to delete all Shelby storage files
-Run with: python backend/scripts/delete_all_shelby.py
+Script to delete all Walrus storage files
+Run with: python backend/scripts/delete_all_walrus.py
 """
 
 import sys
 from pathlib import Path
 
-STORAGE_ROOT = Path(__file__).resolve().parent.parent / "storage" / "shelby"
+STORAGE_ROOT = Path(__file__).resolve().parent.parent / "storage" / "walrus"
 
 
 def delete_directory(dir_path):
@@ -24,13 +24,13 @@ def delete_directory(dir_path):
         return False
 
 
-def delete_all_shelby_files():
+def delete_all_walrus_files():
     try:
-        print(f"🗑️  Deleting all Shelby files from: {STORAGE_ROOT}\n")
+        print(f"🗑️  Deleting all Walrus files from: {STORAGE_ROOT}\n")
 
         # Check if storage directory exists
         if not STORAGE_ROOT.exists():
-            print("✓ No Shelby storage directory found. Nothing to delete.")
+            print("✓ No Walrus storage directory found. Nothing to delete.")
             return
 
         # Read all accounts
@@ -78,19 +78,19 @@ def delete_all_shelby_files():
             except OSError:
                 pass  # Ignore if not empty
 
-        # Try to remove shelby directory
+        # Try to remove walrus directory
         try:
             STORAGE_ROOT.rmdir()
-            print("✓ Removed shelby storage directory")
+            print("✓ Removed walrus storage directory")
         except OSError:
             pass  # Ignore if not empty
 
-        print(f"\n✅ Successfully deleted {total_deleted} voice(s) from Shelby storage!")
+        print(f"\n✅ Successfully deleted {total_deleted} voice(s) from Walrus storage!")
     except Exception as error:
-        print(f"❌ Error deleting Shelby files: {error}")
+        print(f"❌ Error deleting Walrus files: {error}")
         sys.exit(1)
 
 
 # Run the script
 if __name__ == "__main__":
-    delete_all_shelby_files()
+    delete_all_walrus_files()

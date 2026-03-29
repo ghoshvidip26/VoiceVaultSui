@@ -127,10 +127,10 @@ const Docs = () => {
               <Step number={2} title="Process &amp; Train">
                 <p>
                   Click <strong>Process Voice</strong>. VoiceVault sends your
-                  audio to the Shelby AI engine, which generates a voice
+                  audio to the voice processing pipeline, which generates a voice
                   embedding and bundles it with metadata. Once done, your voice
-                  model is uploaded to Shelby decentralized storage and you'll
-                  receive a <code>shelby://</code> URI.
+                  model is uploaded to Walrus decentralized storage and you'll
+                  receive a <code>walrus://</code> URI.
                 </p>
               </Step>
 
@@ -263,12 +263,12 @@ const Docs = () => {
                   <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
                     <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
                       <Layers className="h-4 w-4 text-primary" />
-                      Shelby Storage
+                      Walrus Storage
                     </h4>
                     <p className="text-sm">
                       Voice embeddings, config, and preview audio are stored in
-                      Shelby decentralized blob storage. The on-chain object
-                      holds a <code>shelby://</code> URI pointing to the data.
+                      Walrus decentralized blob storage. The on-chain object
+                      holds a <code>walrus://</code> URI pointing to the data.
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
@@ -278,7 +278,7 @@ const Docs = () => {
                     </h4>
                     <p className="text-sm">
                       A Python FastAPI server handles voice model training (via
-                      Shelby AI), TTS generation, and file processing. It never
+                      the voice pipeline, TTS generation, and file processing. It never
                       holds keys — all payments go through the wallet.
                     </p>
                   </div>
@@ -351,7 +351,7 @@ const Docs = () => {
                   remainder goes directly to your wallet. No intermediaries.
                 </FAQ>
                 <FAQ question="Is my voice data stored on-chain?">
-                  No. The voice embedding and audio are stored on Shelby
+                  No. The voice embedding and audio are stored on Walrus
                   decentralized storage. Only metadata (name, URI, price, rights)
                   lives on-chain as a Sui object.
                 </FAQ>

@@ -11,7 +11,7 @@ import { Loader2, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { addVoiceToRegistry, removeVoiceFromRegistry } from "@/lib/voiceRegistry";
 import { useVoiceMetadata } from "@/hooks/useVoiceMetadata";
-import { isShelbyUri, parseShelbyUri } from "@/lib/shelby";
+import { fetchManifestFromUri, isWalrusUri } from "@/lib/walrus";
 
 interface VoiceRegistrationFormProps {
   autoName?: string;
@@ -62,23 +62,33 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
     }
 
     if (!formData.modelUri.trim()) {
-      toast.error("Model URI is required. Please enter a Shelby URI", {
-        description: "If you processed your voice model above, the Shelby URI should be auto-filled",
+      toast.error("Model URI is required. Please enter a Walrus URI", {
+        description: "If you processed your voice model above, the Walrus URI should be auto-filled",
       });
       return;
     }
 
-    if (!isShelbyUri(formData.modelUri.trim())) {
+    if (!isWalrusUri(formData.modelUri.trim())) {
       toast.error("Invalid model URI format", {
-        description: "Only Shelby URIs are accepted (format: shelby://<account>/<namespace>/<voice_id>)",
+        description: "Only Walrus URIs are accepted (format: walrus://<manifest_blob_id>)",
       });
       return;
     }
 
-    const parsedUri = parseShelbyUri(formData.modelUri.trim());
-    if (parsedUri && address && parsedUri.account.toLowerCase() !== address.toLowerCase()) {
-      toast.error("URI account mismatch", {
-        description: "The Shelby URI must belong to your connected wallet address",
+    let manifestOwner = "";
+    try {
+      const manifest = await fetchManifestFromUri(formData.modelUri.trim());
+      manifestOwner = manifest.owner;
+    } catch {
+      toast.error("Unable to load Walrus manifest", {
+        description: "Check that the URI exists and the Walrus aggregator is reachable",
+      });
+      return;
+    }
+
+    if (manifestOwner && address && manifestOwner.toLowerCase() !== address.toLowerCase()) {
+      toast.error("URI owner mismatch", {
+        description: "The Walrus manifest owner must match your connected wallet address",
       });
       return;
     }
@@ -141,7 +151,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to delete your voice "${existingVoice.name}"? This action cannot be undone and will remove your voice from the blockchain and Shelby storage.`
+      `Are you sure you want to delete your voice "${existingVoice.name}"? This action cannot be undone and will remove your voice from the blockchain and storage.`
     );
 
     if (!confirmed) return;
@@ -152,15 +162,15 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
     if (result?.success) {
       removeVoiceFromRegistry(address);
 
-      if (existingVoice.modelUri && existingVoice.modelUri.startsWith("shelby://")) {
+      if (existingVoice.modelUri && (existingVoice.modelUri.startsWith("walrus://") || existingVoice.modelUri.startsWith("walrus://"))) {
         try {
-          toast.info("Deleting voice from Shelby storage...");
+          toast.info("Deleting voice bundle from storage...");
           const { backendApi } = await import("@/lib/api");
-          await backendApi.deleteFromShelby(existingVoice.modelUri, address);
-          toast.success("Voice deleted from Shelby storage");
+          await backendApi.deleteModelBundle(existingVoice.modelUri, address);
+          toast.success("Voice deleted from storage");
         } catch (err: any) {
-          console.error("Error deleting from Shelby:", err);
-          toast.warning("Voice deleted on-chain, but Shelby deletion failed", {
+          console.error("Error deleting from storage:", err);
+          toast.warning("Voice deleted on-chain, but storage deletion failed", {
             description: err.message || "Voice files may still exist in storage",
           });
         }
@@ -297,11 +307,11 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
               required
             />
             <p className="text-xs text-muted-foreground">
-              Required. Enter the Shelby URI for your voice model. If you processed your voice above, this should be auto-filled.
+              Required. Enter the Walrus URI for your voice model. If you processed your voice above, this should be auto-filled.
               <br />
-              Format: <code className="text-xs">shelby://&lt;sui_account&gt;/voices/&lt;voice_id&gt;</code>
+              Format: <code className="text-xs">walrus://&lt;manifest_blob_id&gt;</code>
               <br />
-              Only Shelby URIs are accepted. Process your voice model in Step 2 to get a Shelby URI.
+              Only Walrus URIs are accepted. Process your voice model in Step 1 to get a Walrus URI.
             </p>
           </div>
 

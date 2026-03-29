@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Search, SlidersHorizontal, TrendingUp, Clock, Star, RefreshCw } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { VoiceMetadata } from "@/hooks/useVoiceMetadata";
-import { useVoicesWithShelbyMetadata } from "@/hooks/useVoicesWithShelbyMetadata";
+import { useVoicesWithWalrusMetadata } from "@/hooks/useVoicesWithWalrusMetadata";
 import { VoiceMarketplaceCard } from "@/components/voice/VoiceMarketplaceCard";
 import { toast } from "sonner";
 import { getVoiceAddresses } from "@/lib/voiceRegistry";
@@ -28,17 +28,17 @@ const Marketplace = () => {
 
   // Load voice addresses from localStorage registry
   // Note: These are addresses that have registered voices on-chain
-  // The actual voice metadata is fetched from Sui (on-chain) and Shelby (meta.json)
+  // The actual voice metadata is fetched from Sui (on-chain) and Walrus metadata blobs.
   // In the future, we could query blockchain events to discover all registered voices
   useEffect(() => {
     const addresses = getVoiceAddresses();
     setVoiceAddresses(addresses);
   }, []);
 
-  // Fetch voices with metadata from both Sui (on-chain) and Shelby (meta.json)
+  // Fetch voices with metadata from both Sui (on-chain) and Walrus manifests.
   // Sui provides: owner, price, rights, modelUri
-  // Shelby provides: name, description, preview audio
-  const { voices: enrichedVoices, isLoading: isLoadingVoices } = useVoicesWithShelbyMetadata(voiceAddresses);
+  // Walrus provides: name, description, preview audio
+  const { voices: enrichedVoices, isLoading: isLoadingVoices } = useVoicesWithWalrusMetadata(voiceAddresses);
   
   // Only show voices registered on-chain (no mock data)
   const voices = enrichedVoices;

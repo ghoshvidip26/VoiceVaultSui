@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { VoiceMetadata } from "@/hooks/useVoiceMetadata";
-import { VoiceWithShelbyMetadata } from "@/hooks/useVoicesWithShelbyMetadata";
+import { VoiceWithWalrusMetadata } from "@/hooks/useVoicesWithWalrusMetadata";
 import { usePayForInference } from "@/hooks/usePayForInference";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, ShoppingCart, Coins, Play } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { formatAddress } from "@/lib/sui";
-import { isShelbyUri } from "@/lib/shelby";
+import { isWalrusUri } from "@/lib/walrus";
 import { isVoicePurchased } from "@/lib/purchasedVoices";
 
 interface VoiceMarketplaceCardProps {
-  voice: VoiceWithShelbyMetadata;
+  voice: VoiceWithWalrusMetadata;
   onPaymentSuccess?: (txHash: string, voice: VoiceMetadata) => void;
 }
 
@@ -28,7 +28,8 @@ export function VoiceMarketplaceCard({ voice, onPaymentSuccess }: VoiceMarketpla
 
   const price = voice.pricePerUse;
   const isPurchased = isVoicePurchased(voice.voiceId, voice.owner);
-  const isShelby = isShelbyUri(voice.modelUri);
+  const isWalrus = isWalrusUri(voice.modelUri);
+  const isLegacyWalrus = voice.modelUri.startsWith("walrus://");
   
   // Fetch breakdown from backend when dialog opens, fallback to local calculation
   useEffect(() => {
@@ -86,9 +87,14 @@ export function VoiceMarketplaceCard({ voice, onPaymentSuccess }: VoiceMarketpla
           <CardTitle className="flex items-center justify-between">
             <span>{voice.name}</span>
             <div className="flex items-center gap-2">
-              {isShelby && (
+              {isWalrus && (
                 <Badge variant="outline" className="text-xs">
-                  Shelby
+                  Walrus
+                </Badge>
+              )}
+              {isLegacyWalrus && (
+                <Badge variant="outline" className="text-xs">
+                  Legacy Walrus
                 </Badge>
               )}
               {isPurchased && (
@@ -126,10 +132,16 @@ export function VoiceMarketplaceCard({ voice, onPaymentSuccess }: VoiceMarketpla
               <span className="text-muted-foreground">Creator:</span>{" "}
               <span className="font-mono text-xs">{formatAddress(voice.owner)}</span>
             </div>
-            {isShelby && (
+            {isWalrus && (
               <div>
                 <span className="text-muted-foreground">Storage:</span>{" "}
-                <span className="text-xs text-green-600">Shelby (Decentralized)</span>
+                <span className="text-xs text-green-600">Walrus (Content-Addressed)</span>
+              </div>
+            )}
+            {isLegacyWalrus && (
+              <div>
+                <span className="text-muted-foreground">Storage:</span>{" "}
+                <span className="text-xs text-amber-600">Walrus (Legacy)</span>
               </div>
             )}
           </div>
