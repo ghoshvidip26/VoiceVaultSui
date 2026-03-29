@@ -32,3 +32,4 @@ frontend/package-lock.json
 frontend/.env
 next/.env
 .claude/
+.env
