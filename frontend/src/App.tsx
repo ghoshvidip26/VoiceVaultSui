@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Marketplace from "./pages/Marketplace";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
+import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { WalletProvider } from "@/contexts/WalletContext";
@@ -44,6 +45,7 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route path="/docs" element={<Docs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play } from "lucide-react";
+import { ArrowRight, Play, BookOpen } from "lucide-react";
 import { Link } from "react-router-dom";
 import heroWaves from "@/assets/freq.mp4";
 
@@ -79,6 +79,16 @@ export function HeroSection() {
               >
                 <Play className="h-5 w-5" />
                 Explore Voices
+              </Button>
+            </Link>
+            <Link to="/docs">
+              <Button
+                size="xl"
+                variant="ghost"
+                className="border border-white/10 hover:bg-white/10"
+              >
+                <BookOpen className="h-5 w-5" />
+                How to Use?
               </Button>
             </Link>
           </div>

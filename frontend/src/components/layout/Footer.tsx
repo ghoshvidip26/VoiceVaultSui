@@ -9,8 +9,8 @@ const footerLinks = {
     { label: "Pricing", href: "#" },
   ],
   resources: [
-    { label: "Documentation", href: "#" },
-    { label: "API Reference", href: "#" },
+    { label: "Documentation", href: "/docs" },
+    { label: "API Reference", href: "/docs#contracts" },
   ],
   legal: [
     { label: "Privacy Policy", href: "#" },
