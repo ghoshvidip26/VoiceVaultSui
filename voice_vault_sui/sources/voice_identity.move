@@ -1,18 +1,9 @@
 module voice_vault_sui::voice_identity {
-
     use std::string::String;
-
-    /// Global registry (shared object)
-    public struct VoiceRegistry has key {
-        id: UID,
-        counter: u64
-    }
-
     /// Voice object
     public struct VoiceIdentity has key, store {
         id: UID,
         owner: address,
-        voice_id: u64,
         name: String,
         model_uri: String, // Stores the Walrus manifest URI (walrus://<manifest_blob_id>)
         rights: String,
@@ -20,14 +11,8 @@ module voice_vault_sui::voice_identity {
         created_at: u64
     }
 
-    /// Initialize registry (run once)
-    public fun init_registry(ctx: &mut TxContext): VoiceRegistry {
-        VoiceRegistry { id: object::new(ctx), counter: 0 }
-    }
-
     /// Register voice (ONE per user enforced externally)
     public fun register_voice(
-        registry: &mut VoiceRegistry,
         name: String,
         model_uri: String,
         rights: String,
@@ -36,13 +21,9 @@ module voice_vault_sui::voice_identity {
     ): VoiceIdentity {
         let sender = tx_context::sender(ctx);
 
-        let id = registry.counter;
-        registry.counter = id + 1;
-
         VoiceIdentity {
             id: object::new(ctx),
             owner: sender,
-            voice_id: id,
             name,
             model_uri,
             rights,
@@ -61,12 +42,10 @@ module voice_vault_sui::voice_identity {
     }
 
     /// Read helpers
-    public fun get_metadata(voice: &VoiceIdentity): (
-        address, u64, String, String, String, u64, u64
-    ) {
+    public fun get_metadata(voice: &VoiceIdentity):
+        (address, String, String, String, u64, u64) {
         (
             voice.owner,
-            voice.voice_id,
             voice.name,
             voice.model_uri,
             voice.rights,
@@ -75,13 +54,8 @@ module voice_vault_sui::voice_identity {
         )
     }
 
-    public fun get_voice_id(voice: &VoiceIdentity): u64 {
-        voice.voice_id
-    }
-
-    public fun voice_exists(_owner: address): bool {
-        // Not enforceable on-chain without registry mapping
-        true
+    public fun get_voice_id(voice: &VoiceIdentity): ID {
+        object::id(voice)
     }
 }
 
