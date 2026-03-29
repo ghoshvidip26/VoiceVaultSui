@@ -4,32 +4,11 @@
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "vite",
-  "env": {
-    "VITE_API_URL": "@vite_api_url",
-    "VITE_PROXY_URL": "@vite_proxy_url",
-    "VITE_BACKEND_URL": "@vite_backend_url",
-    "VITE_SUI_NETWORK": "@vite_sui_network",
-    "VITE_SUI_RPC_URL": "@vite_sui_rpc_url",
-    "VITE_SUI_PACKAGE_ID": "@vite_sui_package_id",
-    "VITE_SUI_VOICE_REGISTRY_ID": "@vite_sui_voice_registry_id",
-    "VITE_WALRUS_AGGREGATOR_URL": "@vite_walrus_aggregator_url"
-  },
+
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ],
-  "headers": [
-    {
-      "source": "/assets/(.*)",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
-        }
-      ]
-    }
   ]
 }
-
