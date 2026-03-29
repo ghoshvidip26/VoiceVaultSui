@@ -2,7 +2,7 @@
 
 export const CONTRACTS = {
   // Published package ID on Sui testnet (from Published.toml)
-  PACKAGE_ID: "0xfad2808bcd104197b53b1fddede5f25d5c16303b147d280c2aa7ff69d27e5d59",
+  PACKAGE_ID: "0x1ad12f0fd581dbd4fef7a30c9cff9bececfca1da450fe53257791502b3db073d",
   
   // VoiceRegistry shared object ID (created by init_registry)
   // Update this after calling: sui client call --function init_registry --package {PACKAGE_ID}

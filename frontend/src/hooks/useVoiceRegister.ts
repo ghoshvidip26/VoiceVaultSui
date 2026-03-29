@@ -31,11 +31,10 @@ export function useVoiceRegister() {
 
       const tx = new Transaction();
 
-      // Call voice_identity::register_voice on the shared VoiceRegistry
+      // Call voice_identity::register_voice
       const voice = tx.moveCall({
         target: `${CONTRACTS.PACKAGE_ID}::${CONTRACTS.VOICE_IDENTITY.module}::register_voice`,
         arguments: [
-          tx.object(CONTRACTS.VOICE_REGISTRY_ID),
           tx.pure.string(data.name),
           tx.pure.string(data.modelUri),
           tx.pure.string(data.rights),
