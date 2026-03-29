@@ -1,18 +1,23 @@
 // Contract addresses and module names for deployed Sui Move contracts
+
 export const CONTRACTS = {
-  // Published package ID on Sui testnet
+  // Published package ID on Sui testnet (from Published.toml)
   PACKAGE_ID: "0xfad2808bcd104197b53b1fddede5f25d5c16303b147d280c2aa7ff69d27e5d59",
+  
   // VoiceRegistry shared object ID (created by init_registry)
-  // TODO: Replace with actual object ID after calling init_registry on testnet
-  VOICE_REGISTRY_ID: "0x0000000000000000000000000000000000000000000000000000000000000000",
+  // Update this after calling: sui client call --function init_registry --package {PACKAGE_ID}
+  // For now, using a placeholder - it will be initialized on first app load
+  VOICE_REGISTRY_ID: import.meta.env.VITE_SUI_VOICE_REGISTRY_ID || "0x",
+  
   VOICE_IDENTITY: {
     module: "voice_identity",
   },
   PAYMENT: {
     module: "payment",
   },
-  // Platform fee recipient address
-  PLATFORM_ADDRESS: "0xfad2808bcd104197b53b1fddede5f25d5c16303b147d280c2aa7ff69d27e5d59",
+  
+  // Platform fee recipient address - your wallet address
+  PLATFORM_ADDRESS: "0x00fe9f516cc03adabcb1c521ecb82f9d2c5c9a42102b5e9895939b63d098df70",
 } as const;
 
 // Fee structure (matching Move contract)

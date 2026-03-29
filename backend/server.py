@@ -16,6 +16,9 @@ load_dotenv(dotenv_path=BACKEND_DIR.parent / ".env")
 import voice_model
 import walrus as walrus_module
 
+# Ensure storage directories exist
+walrus_module._ensure_storage_dirs()
+
 app = FastAPI()
 
 app.add_middleware(
@@ -28,9 +31,9 @@ app.add_middleware(
 
 
 def _download_preview_from_walrus(model_uri: str):
-    manifest_blob_id = walrus_module.parse_walrus_uri(model_uri)
-
+    """Download voice files from Walrus bundle."""
     try:
+        manifest_blob_id = walrus_module.parse_walrus_uri(model_uri)
         embedding_buffer = walrus_module.download_file(manifest_blob_id, "embedding.bin")
     except Exception:
         embedding_buffer = None
@@ -40,23 +43,6 @@ def _download_preview_from_walrus(model_uri: str):
         config_buffer = None
     try:
         preview_buffer = walrus_module.download_file(manifest_blob_id, "preview.wav")
-    except Exception:
-        preview_buffer = None
-
-    return embedding_buffer, config_buffer, preview_buffer
-
-
-def _download_preview_from_walrus(model_uri: str):
-    try:
-        embedding_buffer = walrus_module.download_from_walrus(model_uri, "embedding.bin")
-    except Exception:
-        embedding_buffer = None
-    try:
-        config_buffer = walrus_module.download_from_walrus(model_uri, "config.json")
-    except Exception:
-        config_buffer = None
-    try:
-        preview_buffer = walrus_module.download_from_walrus(model_uri, "preview.wav")
     except Exception:
         preview_buffer = None
 
@@ -90,29 +76,7 @@ async def tts_generate(request: Request):
             if not requester_account:
                 return JSONResponse({"error": "requesterAccount required for Walrus URIs"}, status_code=400)
 
-            has_access = walrus_module.verify_access(model_uri, requester_account)
-            if not has_access:
-                return JSONResponse({
-                    "error": "Access denied",
-                    "message": "You must purchase this voice from the marketplace to use it.",
-                }, status_code=403)
-
-            embedding_buffer, config_buffer, preview_buffer = _download_preview_from_walrus(model_uri)
-
-            if not embedding_buffer or not config_buffer:
-                return JSONResponse({"error": "Voice model files not found on Walrus"}, status_code=404)
-
-            if preview_buffer and len(preview_buffer) > 0:
-                return Response(content=preview_buffer, media_type="audio/wav")
-
-            return JSONResponse({"error": "No preview audio available for this voice"}, status_code=404)
-
-        # Legacy Walrus support while old data is migrated.
-        if model_uri.startswith("walrus://"):
-            if not requester_account:
-                return JSONResponse({"error": "requesterAccount required for Walrus URIs"}, status_code=400)
-
-            has_access = walrus_module.verify_access(model_uri, requester_account)
+            has_access = walrus_module.verify_walrus_access(model_uri, requester_account)
             if not has_access:
                 return JSONResponse({
                     "error": "Access denied",
@@ -131,7 +95,7 @@ async def tts_generate(request: Request):
 
         return JSONResponse({
             "error": "Unsupported model URI format",
-            "message": "Supported formats: 'walrus://...' and legacy 'walrus://...'",
+            "message": "Supported format: 'walrus://...'",
         }, status_code=400)
     except Exception as err:
         return JSONResponse({"error": "TTS generation failed", "message": str(err)}, status_code=500)
@@ -296,7 +260,7 @@ async def walrus_download(request: Request):
             return JSONResponse({"error": "URI and filename are required"}, status_code=400)
 
         if requester_account:
-            has_access = walrus_module.verify_access(uri, requester_account)
+            has_access = walrus_module.verify_walrus_access(uri, requester_account)
             if not has_access:
                 return JSONResponse({"error": "Access denied"}, status_code=403)
 
@@ -385,13 +349,14 @@ async def walrus_download(request: Request):
             return JSONResponse({"error": "URI and filename are required"}, status_code=400)
 
         if requester_account:
-            has_access = walrus_module.verify_access(uri, requester_account)
+            has_access = walrus_module.verify_walrus_access(uri, requester_account)
             if not has_access:
                 return JSONResponse({"error": "Access denied"}, status_code=403)
 
-        file_buffer = walrus_module.download_from_walrus(uri, filename)
+        manifest_blob_id = walrus_module.parse_walrus_uri(uri)
+        file_buffer = walrus_module.download_file(manifest_blob_id, filename)
         return Response(content=file_buffer, media_type=_content_type_for(filename))
-    except walrus_module.FileNotFoundError as err:
+    except walrus_module.WalrusFileNotFoundError as err:
         return JSONResponse({"error": "File not found", "message": str(err)}, status_code=404)
     except Exception as err:
         print(f"[API] Walrus download error: name={type(err).__name__}, message={err}")
