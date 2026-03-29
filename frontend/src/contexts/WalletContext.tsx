@@ -1,22 +1,24 @@
 import React, { ReactNode } from 'react';
-import { AptosWalletAdapterProvider } from '@aptos-labs/wallet-adapter-react';
-import { Network } from '@aptos-labs/ts-sdk';
+import { createNetworkConfig, SuiClientProvider, WalletProvider as SuiWalletProvider } from '@mysten/dapp-kit';
+import { getJsonRpcFullnodeUrl } from '@mysten/sui/jsonRpc';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import '@mysten/dapp-kit/dist/index.css';
+
+const { networkConfig } = createNetworkConfig({
+  testnet: { url: getJsonRpcFullnodeUrl('testnet'), network: 'testnet' },
+  mainnet: { url: getJsonRpcFullnodeUrl('mainnet'), network: 'mainnet' },
+});
+
+const queryClient = new QueryClient();
 
 export const WalletProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
-    <AptosWalletAdapterProvider
-      autoConnect={true}
-      dappConfig={{
-        network: Network.TESTNET,
-      }}
-      onError={(error) => {
-        console.error('Wallet adapter error:', error);
-      }}
-    >
-      {children}
-    </AptosWalletAdapterProvider>
+    <QueryClientProvider client={queryClient}>
+      <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
+        <SuiWalletProvider autoConnect>
+          {children}
+        </SuiWalletProvider>
+      </SuiClientProvider>
+    </QueryClientProvider>
   );
 };
-
-// Re-export the hook from the adapter
-export { useWallet } from '@aptos-labs/wallet-adapter-react';

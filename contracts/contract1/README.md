@@ -1,3 +1,0 @@
-Transaction submitted: https://explorer.aptoslabs.com/txn/0x7ccf6915a7f30459681e487b61930e641511addef7fc9ca21c27832eb7ce92e6?network=testnet
-
-✅ Module deployed successfully: 0x7ccf6915a7f30459681e487b61930e641511addef7fc9ca21c27832eb7ce92e6

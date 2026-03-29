@@ -1,6 +1,6 @@
 /**
  * Complete Integration Example
- * 
+ *
  * This component demonstrates the full flow:
  * 1. Connect wallet
  * 2. Register voice
@@ -10,7 +10,8 @@
  */
 
 import { useState } from "react";
-import { useAptosWallet } from "@/hooks/useAptosWallet";
+import { useConnectWallet, useDisconnectWallet, useCurrentAccount } from "@mysten/dapp-kit";
+import { useSuiWallet } from "@/hooks/useSuiWallet";
 import { useVoiceRegister } from "@/hooks/useVoiceRegister";
 import { useVoiceMetadata } from "@/hooks/useVoiceMetadata";
 import { usePayForInference } from "@/hooks/usePayForInference";
@@ -21,10 +22,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Wallet, CheckCircle2, Play } from "lucide-react";
 import { toast } from "sonner";
-import { formatAddress } from "@/lib/aptos";
+import { formatAddress } from "@/lib/sui";
+import { ConnectButton } from "@mysten/dapp-kit";
 
 export function CompleteIntegrationExample() {
-  const { connect, disconnect, isConnected, address } = useAptosWallet();
+  const { isConnected, address } = useSuiWallet();
   const { registerVoice, isRegistering } = useVoiceRegister();
   const { payForInference, isPaying } = usePayForInference();
 
@@ -68,7 +70,6 @@ export function CompleteIntegrationExample() {
       royaltyRecipient: selectedVoice.owner,
       onSuccess: async (txHash) => {
         toast.success("Payment successful! Generating audio...");
-        // Here you would trigger TTS generation
       },
     });
   };
@@ -89,15 +90,12 @@ export function CompleteIntegrationExample() {
             <CardHeader>
               <CardTitle>Connect Your Wallet</CardTitle>
               <CardDescription>
-                Connect your Aptos wallet to get started
+                Connect your Sui wallet to get started
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {!isConnected ? (
-                <Button onClick={() => connect("Petra")} className="w-full" size="lg">
-                  <Wallet className="mr-2 h-5 w-5" />
-                  Connect Wallet
-                </Button>
+                <ConnectButton />
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
@@ -105,13 +103,11 @@ export function CompleteIntegrationExample() {
                     <div>
                       <p className="font-medium">Connected</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatAddress(address?.toString() || "")}
+                        {formatAddress(address || "")}
                       </p>
                     </div>
                   </div>
-                  <Button onClick={disconnect} variant="outline" className="w-full">
-                    Disconnect
-                  </Button>
+                  <ConnectButton />
                 </div>
               )}
             </CardContent>
@@ -159,7 +155,7 @@ export function CompleteIntegrationExample() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Price Per Use (APT)</Label>
+                <Label htmlFor="price">Price Per Use (SUI)</Label>
                 <Input
                   id="price"
                   type="number"
@@ -212,7 +208,7 @@ export function CompleteIntegrationExample() {
                 <div className="p-4 bg-muted rounded-lg space-y-2">
                   <h3 className="font-semibold">{selectedVoice.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Price: {selectedVoice.pricePerUse} APT
+                    Price: {selectedVoice.pricePerUse} SUI
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Rights: {selectedVoice.rights}
@@ -259,7 +255,7 @@ export function CompleteIntegrationExample() {
                 ) : (
                   <>
                     <Play className="mr-2 h-4 w-4" />
-                    Pay & Generate ({selectedVoice?.pricePerUse || 0} APT)
+                    Pay & Generate ({selectedVoice?.pricePerUse || 0} SUI)
                   </>
                 )}
               </Button>

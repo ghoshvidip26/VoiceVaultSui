@@ -1,14 +1,14 @@
-import { useWallet as useAptosWalletAdapter } from "@aptos-labs/wallet-adapter-react";
+import { useCurrentAccount } from "@mysten/dapp-kit";
 
 /**
  * Thin wrapper to keep the existing `useWallet` API shape,
- * now using the Aptos wallet adapter (e.g. Petra).
+ * now using Sui dApp Kit.
  */
 export function useWallet() {
-  const wallet = useAptosWalletAdapter();
+  const account = useCurrentAccount();
 
   return {
-    connected: wallet.connected && !!wallet.account?.address,
-    account: wallet.account,
+    connected: !!account?.address,
+    account,
   };
 }

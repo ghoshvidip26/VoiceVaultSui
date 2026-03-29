@@ -9,7 +9,7 @@ import { useVoicesWithShelbyMetadata } from "@/hooks/useVoicesWithShelbyMetadata
 import { VoiceMarketplaceCard } from "@/components/voice/VoiceMarketplaceCard";
 import { toast } from "sonner";
 import { getVoiceAddresses } from "@/lib/voiceRegistry";
-import { useAptosWallet } from "@/hooks/useAptosWallet";
+import { useSuiWallet } from "@/hooks/useSuiWallet";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,22 +21,22 @@ const filterTabs = [
 ];
 
 const Marketplace = () => {
-  const { address } = useAptosWallet();
+  const { address } = useSuiWallet();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("trending");
   const [voiceAddresses, setVoiceAddresses] = useState<string[]>([]);
 
   // Load voice addresses from localStorage registry
   // Note: These are addresses that have registered voices on-chain
-  // The actual voice metadata is fetched from Aptos (on-chain) and Shelby (meta.json)
+  // The actual voice metadata is fetched from Sui (on-chain) and Shelby (meta.json)
   // In the future, we could query blockchain events to discover all registered voices
   useEffect(() => {
     const addresses = getVoiceAddresses();
     setVoiceAddresses(addresses);
   }, []);
 
-  // Fetch voices with metadata from both Aptos (on-chain) and Shelby (meta.json)
-  // Aptos provides: owner, price, rights, modelUri
+  // Fetch voices with metadata from both Sui (on-chain) and Shelby (meta.json)
+  // Sui provides: owner, price, rights, modelUri
   // Shelby provides: name, description, preview audio
   const { voices: enrichedVoices, isLoading: isLoadingVoices } = useVoicesWithShelbyMetadata(voiceAddresses);
   
@@ -85,7 +85,7 @@ const Marketplace = () => {
                 Voice <span className="gradient-text">Marketplace</span>
               </h1>
               <p className="text-lg text-muted-foreground">
-                Discover unique AI voice models registered on Aptos blockchain. License instantly, pay per use.
+                Discover unique AI voice models registered on Sui blockchain. License instantly, pay per use.
               </p>
               <div className="flex items-center gap-2 mt-2">
                 <p className="text-sm text-muted-foreground">
@@ -93,7 +93,7 @@ const Marketplace = () => {
                 </p>
                 {voices.length > 0 && (
                   <span className="text-xs text-muted-foreground">
-                    • All voices verified on Aptos blockchain
+                    • All voices verified on Sui blockchain
                   </span>
                 )}
               </div>
@@ -168,7 +168,7 @@ const Marketplace = () => {
                   <strong>No voices registered on-chain yet.</strong>
                   <br />
                   <span className="text-sm mt-2 block">
-                    Be the first to register your voice on Aptos blockchain!
+                    Be the first to register your voice on Sui blockchain!
                   </span>
                   <span className="text-xs text-muted-foreground mt-2 block">
                     Go to the Upload page to register your voice on-chain and make it available in the marketplace.

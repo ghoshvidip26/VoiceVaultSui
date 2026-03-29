@@ -1,14 +1,18 @@
-// Contract addresses and module names for deployed Move contracts
+// Contract addresses and module names for deployed Sui Move contracts
 export const CONTRACTS = {
-  PAYMENT: {
-    address: "0xb0fcc55b9a116fec51295eb73b03ac31083a841290405c955fc088c2eeb0bf27",
-    module: "payment_contract",
-  },
+  // Published package ID on Sui testnet
+  PACKAGE_ID: "0xfad2808bcd104197b53b1fddede5f25d5c16303b147d280c2aa7ff69d27e5d59",
+  // VoiceRegistry shared object ID (created by init_registry)
+  // TODO: Replace with actual object ID after calling init_registry on testnet
+  VOICE_REGISTRY_ID: "0x0000000000000000000000000000000000000000000000000000000000000000",
   VOICE_IDENTITY: {
-    address: "0xf32dc47c185d9bc65638b57eb50eb0c9c47832f898e373a6e1636535c6f1772c",
     module: "voice_identity",
   },
-  PLATFORM_ADDRESS: "0xb0fcc55b9a116fec51295eb73b03ac31083a841290405c955fc088c2eeb0bf27", // Platform fee recipient
+  PAYMENT: {
+    module: "payment",
+  },
+  // Platform fee recipient address
+  PLATFORM_ADDRESS: "0xfad2808bcd104197b53b1fddede5f25d5c16303b147d280c2aa7ff69d27e5d59",
 } as const;
 
 // Fee structure (matching Move contract)
@@ -32,12 +36,12 @@ export function calculatePaymentBreakdown(totalAmount: number) {
   };
 }
 
-// Convert APT to Octas (1 APT = 100,000,000 Octas)
-export function aptToOctas(apt: number): number {
-  return Math.floor(apt * 100_000_000);
+// Convert SUI to MIST (1 SUI = 1,000,000,000 MIST)
+export function suiToMist(sui: number): number {
+  return Math.floor(sui * 1_000_000_000);
 }
 
-// Convert Octas to APT
-export function octasToApt(octas: number): number {
-  return octas / 100_000_000;
+// Convert MIST to SUI
+export function mistToSui(mist: number): number {
+  return mist / 1_000_000_000;
 }

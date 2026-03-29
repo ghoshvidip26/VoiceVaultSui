@@ -35,8 +35,8 @@ export function UsageChart() {
           <AreaChart data={data}>
             <defs>
               <linearGradient id="usesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(187, 100%, 50%)" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(187, 100%, 50%)" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(210, 69%, 60%)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="hsl(210, 69%, 60%)" stopOpacity={0} />
               </linearGradient>
               <linearGradient id="earningsGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="hsl(270, 60%, 50%)" stopOpacity={0.3} />
@@ -64,7 +64,7 @@ export function UsageChart() {
             <Area
               type="monotone"
               dataKey="uses"
-              stroke="hsl(187, 100%, 50%)"
+              stroke="hsl(210, 69%, 60%)"
               strokeWidth={2}
               fillOpacity={1}
               fill="url(#usesGradient)"

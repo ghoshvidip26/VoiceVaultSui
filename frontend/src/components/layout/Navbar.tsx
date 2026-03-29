@@ -1,40 +1,41 @@
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { useAptosWallet, getAccountBalance as getAptosAccountBalance } from "@/hooks/useAptosWallet";
+import { ConnectButton, useCurrentAccount, useSuiClient } from "@mysten/dapp-kit";
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/marketplace", label: "Marketplace" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/upload", label: "Create Voice" },
-  { href: "/deploy", label: "Deploy" },
 ];
 
 export function Navbar() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isConnected, address, connect, disconnect, wallets } = useAptosWallet();
-  const [aptBalance, setAptBalance] = useState<number | null>(null);
+  const account = useCurrentAccount();
+  const suiClient = useSuiClient();
+  const [suiBalance, setSuiBalance] = useState<number | null>(null);
+
+  const address = account?.address;
+  const isConnected = !!address;
 
   useEffect(() => {
     let cancelled = false;
 
     async function fetchBalance() {
-      const addr = address?.toString();
-      if (!addr) {
-        setAptBalance(null);
+      if (!address) {
+        setSuiBalance(null);
         return;
       }
       try {
-        const balance = await getAptosAccountBalance(addr);
+        const balance = await suiClient.getBalance({ owner: address });
         if (!cancelled) {
-          setAptBalance(balance);
+          setSuiBalance(Number(balance.totalBalance) / 1_000_000_000);
         }
       } catch {
         if (!cancelled) {
-          setAptBalance(null);
+          setSuiBalance(null);
         }
       }
     }
@@ -44,29 +45,7 @@ export function Navbar() {
     return () => {
       cancelled = true;
     };
-      }, [address]);
-
-  const handleWalletClick = async () => {
-    try {
-      if (isConnected) {
-        await disconnect();
-        return;
-      }
-
-      // Prefer Petra if available, otherwise first wallet
-      const preferred =
-        wallets.find((w) => w.name.toLowerCase().includes("petra")) ?? wallets[0];
-
-      if (!preferred) {
-        console.error("No Aptos wallets available");
-        return;
-      }
-
-      await connect(preferred.name);
-    } catch (err) {
-      console.error("Wallet connect/disconnect error:", err);
-    }
-  };
+  }, [address, suiClient]);
 
   return (
     <nav className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] md:w-[88%] lg:w-[82%]">
@@ -106,19 +85,12 @@ export function Navbar() {
 
           {/* Right Section */}
           <div className="hidden md:flex items-center gap-7">
-            {address && aptBalance !== null && (
+            {address && suiBalance !== null && (
               <div className="px-3 py-1 rounded-full bg-primary/10 text-xs font-medium text-primary">
-                {aptBalance.toFixed(3)} APT
+                {suiBalance.toFixed(3)} SUI
               </div>
             )}
-            <Button
-              variant="default"
-              onClick={handleWalletClick}
-            >
-              {isConnected && address
-                ? `${address.toString().slice(0, 6)}...${address.toString().slice(-4)}`
-                : "Connect Petra"}
-            </Button>
+            <ConnectButton />
           </div>
 
           {/* Mobile Menu Button */}
@@ -149,15 +121,7 @@ export function Navbar() {
               ))}
 
               <div className="mt-2 flex items-center justify-center px-4">
-                <Button
-                  variant="default"
-                  onClick={handleWalletClick}
-                  className="w-full"
-                >
-                  {isConnected && address
-                    ? `${address.toString().slice(0, 6)}...${address.toString().slice(-4)}`
-                    : "Connect Petra"}
-                </Button>
+                <ConnectButton />
               </div>
             </div>
           </div>

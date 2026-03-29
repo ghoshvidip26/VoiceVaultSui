@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useVoiceRegister } from "@/hooks/useVoiceRegister";
 import { useVoiceUnregister } from "@/hooks/useVoiceUnregister";
-import { useAptosWallet } from "@/hooks/useAptosWallet";
+import { useSuiWallet } from "@/hooks/useSuiWallet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ interface VoiceRegistrationFormProps {
 export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: VoiceRegistrationFormProps) {
   const { registerVoice, isRegistering } = useVoiceRegister();
   const { unregisterVoice, isUnregistering } = useVoiceUnregister();
-  const { address, isConnected } = useAptosWallet();
+  const { address, isConnected } = useSuiWallet();
   const [formData, setFormData] = useState({
     name: autoName,
     modelUri: autoModelUri,
@@ -30,16 +30,13 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
   });
 
   // Check if user already has a registered voice (fetched from blockchain)
-  const { metadata: existingVoice, isLoading: checkingVoice } = useVoiceMetadata(address?.toString() || null);
+  const { metadata: existingVoice, isLoading: checkingVoice } = useVoiceMetadata(address || null);
 
   // Update form when auto-fill values change
   useEffect(() => {
     if (autoName) setFormData(prev => ({ ...prev, name: autoName }));
     if (autoModelUri) setFormData(prev => ({ ...prev, modelUri: autoModelUri }));
   }, [autoName, autoModelUri]);
-
-
-  // Note: useVoiceMetadata hook automatically checks if voice exists when address changes
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +55,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
       return;
     }
 
-    // Validate required fields according to contract
+    // Validate required fields
     if (!formData.name.trim()) {
       toast.error("Voice name is required");
       return;
@@ -71,7 +68,6 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
       return;
     }
 
-    // Validate that the URI is a Shelby URI
     if (!isShelbyUri(formData.modelUri.trim())) {
       toast.error("Invalid model URI format", {
         description: "Only Shelby URIs are accepted (format: shelby://<account>/<namespace>/<voice_id>)",
@@ -79,9 +75,8 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
       return;
     }
 
-    // Validate that the Shelby URI matches the connected wallet address
     const parsedUri = parseShelbyUri(formData.modelUri.trim());
-    if (parsedUri && address && parsedUri.account.toLowerCase() !== address.toString().toLowerCase()) {
+    if (parsedUri && address && parsedUri.account.toLowerCase() !== address.toLowerCase()) {
       toast.error("URI account mismatch", {
         description: "The Shelby URI must belong to your connected wallet address",
       });
@@ -99,11 +94,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
       return;
     }
 
-    // Double-check voice doesn't exist (race condition prevention)
-    // Contract will reject with ERROR_VOICE_ALREADY_EXISTS if it exists anyway
-
-    // Register voice on-chain (contract handles all validation)
-    toast.info("Registering voice on Aptos blockchain...");
+    toast.info("Registering voice on Sui blockchain...");
     const result = await registerVoice({
       name: formData.name.trim(),
       modelUri: formData.modelUri.trim(),
@@ -112,29 +103,26 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
     });
 
     if (result?.success) {
-      // Add to local voice registry for marketplace discovery
-      addVoiceToRegistry(address.toString(), formData.name);
-      
-      // Reset form
+      addVoiceToRegistry(address, formData.name);
+
       setFormData({
         name: "",
         modelUri: "",
         rights: "commercial",
         pricePerUse: "0.1",
       });
-      
+
       toast.success("Voice registered on-chain successfully!", {
         description: `Transaction: ${result.transactionHash.slice(0, 8)}...${result.transactionHash.slice(-6)}`,
         duration: 7000,
         action: {
           label: "View on Explorer",
           onClick: () => {
-            window.open(`https://explorer.aptoslabs.com/txn/${result.transactionHash}?network=testnet`, '_blank');
+            window.open(`https://suiscan.xyz/testnet/tx/${result.transactionHash}`, '_blank');
           },
         },
       });
 
-      // Refresh the page after a delay to show the new registration
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -152,51 +140,43 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
       return;
     }
 
-    // Confirm deletion
     const confirmed = window.confirm(
       `Are you sure you want to delete your voice "${existingVoice.name}"? This action cannot be undone and will remove your voice from the blockchain and Shelby storage.`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
-    toast.info("Deleting voice on Aptos blockchain...");
-    const result = await unregisterVoice();
+    toast.info("Deleting voice on Sui blockchain...");
+    const result = await unregisterVoice(existingVoice.objectId);
 
     if (result?.success) {
-      // Remove from local voice registry
-      removeVoiceFromRegistry(address.toString());
-      
-      // Delete from Shelby storage if it's a Shelby URI
+      removeVoiceFromRegistry(address);
+
       if (existingVoice.modelUri && existingVoice.modelUri.startsWith("shelby://")) {
         try {
           toast.info("Deleting voice from Shelby storage...");
           const { backendApi } = await import("@/lib/api");
-          await backendApi.deleteFromShelby(existingVoice.modelUri, address.toString());
+          await backendApi.deleteFromShelby(existingVoice.modelUri, address);
           toast.success("Voice deleted from Shelby storage");
         } catch (err: any) {
           console.error("Error deleting from Shelby:", err);
-          // Don't fail the whole operation if Shelby deletion fails
-          // The on-chain deletion was successful, which is the most important part
           toast.warning("Voice deleted on-chain, but Shelby deletion failed", {
             description: err.message || "Voice files may still exist in storage",
           });
         }
       }
-      
+
       toast.success("Voice deleted successfully!", {
         description: `Transaction: ${result.transactionHash.slice(0, 8)}...${result.transactionHash.slice(-6)}`,
         duration: 7000,
         action: {
           label: "View on Explorer",
           onClick: () => {
-            window.open(`https://explorer.aptoslabs.com/txn/${result.transactionHash}?network=testnet`, '_blank');
+            window.open(`https://suiscan.xyz/testnet/tx/${result.transactionHash}`, '_blank');
           },
         },
       });
 
-      // Refresh the page after a delay to show the deletion
       setTimeout(() => {
         window.location.reload();
       }, 2000);
@@ -228,7 +208,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
                   <strong>Model URI:</strong> {existingVoice.modelUri}
                 </p>
                 <p>
-                  <strong>Price:</strong> {existingVoice.pricePerUse} APT per use
+                  <strong>Price:</strong> {existingVoice.pricePerUse} SUI per use
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
                   The contract allows only one voice per wallet address. You can delete this voice to register a new one.
@@ -257,7 +237,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>Warning:</strong> Deleting your voice will permanently remove it from the blockchain. 
+              <strong>Warning:</strong> Deleting your voice will permanently remove it from the blockchain.
               You will need to sign a transaction with your wallet to confirm the deletion.
             </AlertDescription>
           </Alert>
@@ -271,7 +251,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
       <CardHeader>
         <CardTitle>Register Your Voice on-Chain</CardTitle>
         <CardDescription>
-          Register your voice model on Aptos blockchain to start earning. Only one voice per wallet address.
+          Register your voice model on Sui blockchain to start earning. Only one voice per wallet address.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -319,7 +299,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
             <p className="text-xs text-muted-foreground">
               Required. Enter the Shelby URI for your voice model. If you processed your voice above, this should be auto-filled.
               <br />
-              Format: <code className="text-xs">shelby://&lt;aptos_account&gt;/voices/&lt;voice_id&gt;</code>
+              Format: <code className="text-xs">shelby://&lt;sui_account&gt;/voices/&lt;voice_id&gt;</code>
               <br />
               Only Shelby URIs are accepted. Process your voice model in Step 2 to get a Shelby URI.
             </p>
@@ -343,7 +323,7 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
 
           <div className="space-y-2">
             <Label htmlFor="price">
-              Price Per Use (APT) <span className="text-red-500">*</span>
+              Price Per Use (SUI) <span className="text-red-500">*</span>
             </Label>
             <Input
               id="price"
@@ -356,21 +336,21 @@ export function VoiceRegistrationForm({ autoName = "", autoModelUri = "" }: Voic
               required
             />
             <p className="text-xs text-muted-foreground">
-              Set the price per use in APT. Must be greater than 0.
+              Set the price per use in SUI. Must be greater than 0.
             </p>
           </div>
 
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-xs">
-              <strong>Important:</strong> This will register your voice on Aptos blockchain. 
+              <strong>Important:</strong> This will register your voice on Sui blockchain.
               Only one voice per wallet address is allowed. You will need to sign a transaction with your wallet.
             </AlertDescription>
           </Alert>
 
-          <Button 
-            type="submit" 
-            disabled={isRegistering || !isConnected || checkingVoice} 
+          <Button
+            type="submit"
+            disabled={isRegistering || !isConnected || checkingVoice}
             className="w-full"
           >
             {isRegistering ? (

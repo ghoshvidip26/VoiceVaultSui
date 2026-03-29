@@ -1,22 +1,51 @@
 import { useState, useEffect } from "react";
-import { aptosClient } from "./useAptosWallet";
-import { CONTRACTS, octasToApt } from "@/lib/contracts";
+import { useSuiClient } from "@mysten/dapp-kit";
+import { CONTRACTS, mistToSui } from "@/lib/contracts";
 import { parseMoveString } from "@/lib/moveUtils";
+import type { SuiJsonRpcClient } from "@mysten/sui/jsonRpc";
 
 export interface VoiceMetadata {
   owner: string;
   voiceId: string;
+  objectId: string; // Sui object ID
   name: string;
   modelUri: string;
   rights: string;
-  pricePerUse: number; // in APT
-  createdAt: number; // timestamp
+  pricePerUse: number; // in SUI
+  createdAt: number;
+}
+
+const VOICE_TYPE = `${CONTRACTS.PACKAGE_ID}::${CONTRACTS.VOICE_IDENTITY.module}::VoiceIdentity`;
+
+/**
+ * Parse a VoiceIdentity object's fields into VoiceMetadata
+ */
+function parseVoiceObject(obj: any): VoiceMetadata | null {
+  try {
+    const content = obj.data?.content;
+    if (!content || content.dataType !== "moveObject") return null;
+
+    const fields = content.fields as any;
+    return {
+      owner: fields.owner as string,
+      voiceId: fields.voice_id?.toString() || "0",
+      objectId: obj.data.objectId,
+      name: parseMoveString(fields.name),
+      modelUri: parseMoveString(fields.model_uri),
+      rights: parseMoveString(fields.rights),
+      pricePerUse: mistToSui(Number(fields.price_per_use || 0)),
+      createdAt: Number(fields.created_at || 0),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
- * Fetch voice metadata for a specific owner address
+ * Fetch voice metadata for a specific owner address by querying owned objects
  */
 export function useVoiceMetadata(ownerAddress: string | null) {
+  const suiClient = useSuiClient();
   const [metadata, setMetadata] = useState<VoiceMetadata | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,50 +61,26 @@ export function useVoiceMetadata(ownerAddress: string | null) {
       setError(null);
 
       try {
-        // Query the VoiceIdentity resource directly (since get_metadata is not a view function)
-        const resourceType = `${CONTRACTS.VOICE_IDENTITY.address}::${CONTRACTS.VOICE_IDENTITY.module}::VoiceIdentity`;
-        
-        let resources;
-        try {
-          resources = await aptosClient.getAccountResources({
-            accountAddress: ownerAddress,
-          });
-        } catch (apiError: any) {
-          // Account might not exist or have no resources - this is normal
-          if (apiError.message?.includes("Account not found") || apiError.statusCode === 404) {
-            setMetadata(null);
-            setError(null);
-            return;
-          }
-          throw apiError;
-        }
+        const result = await suiClient.getOwnedObjects({
+          owner: ownerAddress,
+          filter: { StructType: VOICE_TYPE },
+          options: { showContent: true },
+        });
 
-        const voiceResource = resources.find((r) => r.type === resourceType);
-
-        if (!voiceResource || !voiceResource.data) {
-          // Resource doesn't exist - this is normal if voice hasn't been registered yet
+        if (!result.data || result.data.length === 0) {
           setMetadata(null);
-          setError(null); // Don't treat as error, just no voice registered
+          setError(null);
           return;
         }
 
-        const data = voiceResource.data as any;
-
-        setMetadata({
-          owner: data.owner as string,
-          voiceId: data.voice_id?.toString() || "0",
-          name: parseMoveString(data.name),
-          modelUri: parseMoveString(data.model_uri),
-          rights: parseMoveString(data.rights),
-          pricePerUse: octasToApt(Number(data.price_per_use || 0)),
-          createdAt: Number(data.created_at || 0),
-        });
+        // Take the first VoiceIdentity object
+        const voice = parseVoiceObject(result.data[0]);
+        setMetadata(voice);
       } catch (err: any) {
-        // Only log actual errors, not "resource not found" cases
-        if (!err.message?.includes("not found") && !err.message?.includes("Account not found")) {
+        if (!err.message?.includes("not found")) {
           console.error("Error fetching voice metadata:", err);
         }
-        setError(null); // Don't show error for missing resources
+        setError(null);
         setMetadata(null);
       } finally {
         setIsLoading(false);
@@ -83,28 +88,26 @@ export function useVoiceMetadata(ownerAddress: string | null) {
     };
 
     fetchMetadata();
-  }, [ownerAddress]);
+  }, [ownerAddress, suiClient]);
 
   return { metadata, isLoading, error };
 }
 
 /**
- * Fetch voice ID for a specific owner
+ * Fetch voice ID for a specific owner (standalone function)
  */
-export async function getVoiceId(ownerAddress: string): Promise<string | null> {
+export async function getVoiceId(suiClient: SuiJsonRpcClient, ownerAddress: string): Promise<string | null> {
   try {
-    const resourceType = `${CONTRACTS.VOICE_IDENTITY.address}::${CONTRACTS.VOICE_IDENTITY.module}::VoiceIdentity`;
-    const resources = await aptosClient.getAccountResources({
-      accountAddress: ownerAddress,
+    const result = await suiClient.getOwnedObjects({
+      owner: ownerAddress,
+      filter: { StructType: VOICE_TYPE },
+      options: { showContent: true },
     });
 
-    const voiceResource = resources.find((r) => r.type === resourceType);
-    if (!voiceResource || !voiceResource.data) {
-      return null;
-    }
+    if (!result.data || result.data.length === 0) return null;
 
-    const data = voiceResource.data as any;
-    return data.voice_id?.toString() || null;
+    const voice = parseVoiceObject(result.data[0]);
+    return voice?.voiceId || null;
   } catch (error) {
     console.error("Error fetching voice ID:", error);
     return null;
@@ -112,18 +115,17 @@ export async function getVoiceId(ownerAddress: string): Promise<string | null> {
 }
 
 /**
- * Check if a voice exists for an owner address
+ * Check if a voice exists for an owner address (standalone function)
  */
-export async function checkVoiceExists(ownerAddress: string): Promise<boolean> {
+export async function checkVoiceExists(suiClient: SuiJsonRpcClient, ownerAddress: string): Promise<boolean> {
   try {
-    const resourceType = `${CONTRACTS.VOICE_IDENTITY.address}::${CONTRACTS.VOICE_IDENTITY.module}::VoiceIdentity`;
-    const resources = await aptosClient.getAccountResources({
-      accountAddress: ownerAddress,
+    const result = await suiClient.getOwnedObjects({
+      owner: ownerAddress,
+      filter: { StructType: VOICE_TYPE },
     });
 
-    return resources.some((r) => r.type === resourceType);
+    return (result.data?.length || 0) > 0;
   } catch (error) {
-    // If function fails, voice likely doesn't exist
     console.error("Error checking voice existence:", error);
     return false;
   }

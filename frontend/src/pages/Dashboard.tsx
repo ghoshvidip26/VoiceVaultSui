@@ -7,7 +7,8 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEffect, useState } from "react";
-import { useAptosWallet, getAccountBalance as getAptosAccountBalance } from "@/hooks/useAptosWallet";
+import { useSuiWallet, getAccountBalance } from "@/hooks/useSuiWallet";
+import { useSuiClient } from "@mysten/dapp-kit";
 import { useVoicesWithShelbyMetadata } from "@/hooks/useVoicesWithShelbyMetadata";
 
 const recentActivity = [
@@ -15,10 +16,11 @@ const recentActivity = [
 ];
 
 const Dashboard = () => {
-  const { address, isConnected } = useAptosWallet();
-  const walletAddress = address ? address.toString() : "";
+  const { address, isConnected } = useSuiWallet();
+  const suiClient = useSuiClient();
+  const walletAddress = address || "";
   const connected = isConnected;
-  const [aptBalance, setAptBalance] = useState<number | null>(null);
+  const [suiBalance, setSuiBalance] = useState<number | null>(null);
 
   const { voices, isLoading: isVoicesLoading } = useVoicesWithShelbyMetadata(walletAddress ? [walletAddress] : []);
 
@@ -26,19 +28,18 @@ const Dashboard = () => {
     let cancelled = false;
 
     async function fetchBalance() {
-      // Skip fetching if the connected address is not a full-length Aptos address.
-      if (!walletAddress || walletAddress.length < 66) {
-        setAptBalance(null);
+      if (!walletAddress) {
+        setSuiBalance(null);
         return;
       }
       try {
-        const balance = await getAptosAccountBalance(walletAddress);
+        const balance = await getAccountBalance(suiClient, walletAddress);
         if (!cancelled) {
-          setAptBalance(balance);
+          setSuiBalance(balance);
         }
       } catch {
         if (!cancelled) {
-          setAptBalance(null);
+          setSuiBalance(null);
         }
       }
     }
@@ -48,7 +49,7 @@ const Dashboard = () => {
     return () => {
       cancelled = true;
     };
-  }, [walletAddress]);
+  }, [walletAddress, suiClient]);
 
   return (
     <>
@@ -80,9 +81,9 @@ const Dashboard = () => {
                     <div>
                       <p className="text-sm text-muted-foreground">Connected Wallet</p>
                       <p className="font-mono text-sm font-semibold">{walletAddress}</p>
-                      {aptBalance !== null && (
+                      {suiBalance !== null && (
                         <p className="text-xs text-primary mt-1">
-                          {aptBalance.toFixed(3)} APT
+                          {suiBalance.toFixed(3)} SUI
                         </p>
                       )}
                     </div>
@@ -117,8 +118,8 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               <StatsCard
                 title="Total Earnings"
-                value={`${voices.reduce((acc, v) => acc + 0, 0)} APT`}
-                change="0 APT this month"
+                value={`${voices.reduce((acc, v) => acc + 0, 0)} SUI`}
+                change="0 SUI this month"
                 changeType="neutral"
                 icon={DollarSign}
               />
@@ -161,7 +162,7 @@ const Dashboard = () => {
                       </div>
                       <span className={`text-sm font-semibold ${activity.type === 'payout' ? 'text-green-500' : 'text-primary'
                         }`}>
-                        +{activity.amount} APT
+                        +{activity.amount} SUI
                       </span>
                     </div>
                   ))}
@@ -207,7 +208,7 @@ const Dashboard = () => {
                               active
                             </span>
                             <span className="text-sm text-muted-foreground">
-                              {voice.pricePerUse} APT/use
+                              {voice.pricePerUse} SUI/use
                             </span>
                           </div>
                         </div>
@@ -219,7 +220,7 @@ const Dashboard = () => {
                         </div>
                         <div className="text-center">
                           <p className="text-sm text-muted-foreground">Earnings</p>
-                          <p className="font-semibold text-primary">0 APT</p>
+                          <p className="font-semibold text-primary">0 SUI</p>
                         </div>
                         <Button variant="outline" size="sm">
                           <ExternalLink className="h-4 w-4" />
