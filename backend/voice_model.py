@@ -145,9 +145,13 @@ def create_voice_bundle(name, description, owner, voice_id, normalized_audio, em
         "meta.json": json.dumps(meta, indent=2).encode("utf-8"),
     }
 
-    # Add preview.wav if provided
+    # Add preview.wav - use normalized_audio if preview extraction failed
     if preview_audio:
         bundle_files["preview.wav"] = preview_audio
+    else:
+        # Fallback: use entire normalized audio or first portion as preview
+        print("[VoiceModel] Using normalized audio as preview")
+        bundle_files["preview.wav"] = normalized_audio[:min(len(normalized_audio), 160000)]  # ~5 seconds at 16kHz
 
     return {
         "files": bundle_files,

@@ -91,11 +91,12 @@ const Upload = () => {
 
         setPurchasedVoices(allVoices);
 
-        if (selectedPurchasedVoice && !allVoices.some(v => v.modelUri === selectedPurchasedVoice)) {
+        const marketplaceVoices = allVoices.filter(v => !v.isOwned);
+        if (selectedPurchasedVoice && !marketplaceVoices.some(v => v.modelUri === selectedPurchasedVoice)) {
           setSelectedPurchasedVoice("");
         }
-        if (allVoices.length > 0 && !selectedPurchasedVoice) {
-          setSelectedPurchasedVoice(allVoices[0].modelUri);
+        if (marketplaceVoices.length > 0 && !selectedPurchasedVoice) {
+          setSelectedPurchasedVoice(marketplaceVoices[0].modelUri);
         }
       } catch {
         setPurchasedVoices([]);
@@ -153,16 +154,30 @@ const Upload = () => {
       const { chatterboxVoiceClone } = await import("@/lib/chatterbox");
       toast.info("Fetching voice model and generating speech via Chatterbox...");
 
-      const previewBuffer = await backendApi.downloadModelFile(
-        selectedPurchasedVoice,
-        "preview.wav",
-        address.toString()
-      );
+      let previewBuffer;
+      try {
+        previewBuffer = await backendApi.downloadModelFile(
+          selectedPurchasedVoice,
+          "preview.wav",
+          address.toString()
+        );
+      } catch (downloadErr: any) {
+        console.error("Download error:", downloadErr);
+        toast.error(
+          downloadErr.message.includes("File not found") 
+            ? "Voice model files are not complete. Please reprocess the voice in Step 1."
+            : `Failed to fetch voice model: ${downloadErr.message}`
+        );
+        setTtsLoading(false);
+        return;
+      }
+
       const previewBlob = new Blob([previewBuffer], { type: "audio/wav" });
       const audioBlob = await chatterboxVoiceClone(ttsText, previewBlob);
       setTtsAudioUrl(URL.createObjectURL(audioBlob));
       toast.success("Speech generated successfully!");
     } catch (err: any) {
+      console.error("TTS error:", err);
       toast.error(err.message || "Failed to generate speech");
     } finally {
       setTtsLoading(false);
@@ -302,18 +317,18 @@ const Upload = () => {
                 </div>
               )}
 
-              {purchasedVoices.length === 0 ? (
+              {purchasedVoices.filter((v) => !v.isOwned).length === 0 ? (
                 <div className="p-6 border-2 border-dashed rounded-lg text-center space-y-2">
-                  <p className="text-sm text-muted-foreground">No voices available yet.</p>
+                  <p className="text-sm text-muted-foreground">No marketplace voices available yet.</p>
                   <p className="text-xs text-muted-foreground">
-                    Register your own voice below, or visit the Marketplace to buy voices.
+                    Visit the Marketplace to purchase voices, or register your own voice below.
                   </p>
                   <div className="flex gap-2 justify-center mt-4">
-                    <Button variant="outline" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
-                      Register Your Voice
-                    </Button>
                     <Button variant="outline" onClick={() => { window.location.href = "/marketplace"; }}>
                       Go to Marketplace
+                    </Button>
+                    <Button variant="outline" onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}>
+                      Register Your Voice
                     </Button>
                   </div>
                 </div>
@@ -326,9 +341,9 @@ const Upload = () => {
                         <SelectValue placeholder="Select a voice" />
                       </SelectTrigger>
                       <SelectContent>
-                        {purchasedVoices.map((voice) => (
+                        {purchasedVoices.filter((voice) => !voice.isOwned).map((voice) => (
                           <SelectItem key={voice.modelUri} value={voice.modelUri}>
-                            {voice.name} {voice.isOwned ? "👤 (Your Voice)" : "(Purchased)"}
+                            {voice.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
